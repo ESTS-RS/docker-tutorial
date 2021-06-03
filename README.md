@@ -1,9 +1,26 @@
 
+- [Aplicação exemplo](#aplicação-exemplo)
+  - [Lista de tarefas](#lista-de-tarefas)
+    - [Ambiente](#ambiente)
+- [Docker](#docker)
+  - [Com SQLite](#com-sqlite)
+  - [Com PostgreSQL](#com-postgresql)
+- [Docker compose](#docker-compose)
+  - [Declaração do ambiente](#declaração-do-ambiente)
+  - [Execução de ambiente](#execução-de-ambiente)
+- [Cluster Kubernetes](#cluster-kubernetes)
+  - [Execução explícita](#execução-explícita)
+    - [*Pods*](#pods)
+    - [*Load balancer*](#load-balancer)
+  - [Declaração sem isolamento de base de dados](#declaração-sem-isolamento-de-base-de-dados)
+    - [Gestão de pods](#gestão-de-pods)
+  - [Isolamento da base de dados](#isolamento-da-base-de-dados)
+
 # Aplicação exemplo
 
 ## Lista de tarefas
 
-A aplicação exemplo implementa uma lista de tarefas em Python 3, recorrendo à *framework* Flask, e ao ORM SQLAlchemy.
+A aplicação exemplo implementa uma lista de tarefas em Python 3, recorrendo à *framework* Flask, e ao ORM [SQLAlchemy](https://www.sqlalchemy.org/).
 
 Os *endpoints* são os seguintes:
 
@@ -46,7 +63,7 @@ A aplicação executa num *container* com python.
 - `--name` Atribui o nome indicado ao *container*, que passará a funcionar como identificador de execução, e *hostname*
 - `-it` Permite a execução de *shells* interativas (também disponível para `docker exec`)
 
-Após iniciar uma sessão intrativa no *container*, falta instalar dependências e iniciar a aplicação.
+Após iniciar uma sessão interativa no *container*, falta instalar dependências e iniciar a aplicação.
 
     root@268d3dc491ad:/# pip install Flask Flask-SQLAlchemy
     cd /app
@@ -56,9 +73,9 @@ A aplicação está disponível em `localhost:5000`
 
 ## Com PostgreSQL
 
-Pretende-se agora alterar a base de dados para PostgreSQL. O *container* será construído com as dependências necessárias, tal como descrito no [Dockerfile](Dockerfile).
+Pretende-se agora alterar a base de dados para [PostgreSQL](https://www.postgresql.org/). O *container* será construído com as dependências necessárias, tal como descrito no [Dockerfile](Dockerfile).
 
-O container da aplicação será construído com o nome `app`.
+O *container* da aplicação será construído com o nome `app`.
 
     docker build --tag app .
 
@@ -68,7 +85,7 @@ O container da aplicação será construído com o nome `app`.
 
 Esta rede é *bridge*, e suporta resolução de nomes. O nome de rede de cada *container* é o nome indicado na sua execução.
 
-Os *containers* PostgreSQL necessitam da definição de uma variável de ambiente  (`POSTGRES_PASSWORD`) com a password a utilizar pelo utilizador `postgres`.
+Os *containers* PostgreSQL necessitam da definição de uma variável de ambiente  (`POSTGRES_PASSWORD`) com a *password* a utilizar pelo utilizador `postgres`.
 
     docker run --rm --network net -v $(pwd)/data/app -e POSTGRES_PASSWORD=foobar --name db postgres:13.3-alpine
 
@@ -111,11 +128,12 @@ O container `db` é criado com um volume que persiste os ficheiros que suportam 
 Ver [docker-compose.yml](docker-compose.yml) para a descrição completa do ambiente.
 
 ## Execução de ambiente
+
 Para executar o ambiente declarado:
 
     docker-compose up
 
-Para executar em background:
+Para executar em *background*:
 
     docker-compose up -d
 
@@ -125,9 +143,13 @@ Para desligar todos os *containers* declarados no ambiente:
 
 # Cluster Kubernetes
 
-A arquitetura da aplicação fica definida num nó de um cluster kubernetes.
+A arquitetura da aplicação fica definida num nó de um *cluster* [Kubernetes](https://kubernetes.io/).
 
 ![](figures/architecture.png)
+
+Um cluster é uma coleção de nós. Cada nó tem um conjunto de *pods*, serviços, volumes, e outros objetos relevantes para a arquitetura do sistema.
+
+Um *pod* é uma abstração de computação que representa uma coleção de *containers*. O pod assegura apenas que os vários containers partilham o *localhost*, e que estão isolados por *default* do resto do *cluster*. As relações entre pods têm que ser definidas por outros objetos (e.g., serviços).
 
 ## Execução explícita
 
@@ -141,19 +163,19 @@ A arquitetura da aplicação fica definida num nó de um cluster kubernetes.
 - `--port` Porta que o pod vai expor aos restantes pods do cluster (mas não ao exterior)
 - `--image-pull-policy` Executa apenas imagens locais
 
-Para inspecionar a configuração do pod:
+Para inspecionar a configuração do *pod*:
 
     kubectl describe pod/app-pod
 
-Na descrição estão disponíveis vários indicadores sobre o estado do pod.
+Na descrição estão disponíveis vários indicadores sobre o estado do *pod*.
 
 ### *Load balancer*
 
-Um `LoadBalancer` é um serviço no *cluster* que permite, entre outros aspetos, aceder um endereço ip interno do cluster (i.e., um pod) a partir do exterior.
+Um `LoadBalancer` é um serviço no *cluster* que permite, entre outros aspetos, aceder um endereço ip interno do *cluster* (i.e., um pod) a partir do exterior.
 
     kubectl create service loadbalancer lb-svc --tcp=5000:5000
 
-O serviço não oferece acesso ao exterior ao pod. É necessário editar a sua configuração:
+O serviço não oferece acesso ao exterior ao *pod*. É necessário editar a sua configuração:
 
     kubectl edit service/lb-svc
 
@@ -162,13 +184,13 @@ O serviço não oferece acesso ao exterior ao pod. É necessário editar a sua c
         run: app-pod
     ...
 
-O seletor corresponde a um identificador válido do pod que *load balancer* vai controlar. Esse identificador pode ser obtida na descrição do pod.
+O seletor corresponde a um identificador válido do *pod* que *load balancer* vai controlar. Esse identificador pode ser obtida na descrição do *pod*.
 
 ## Declaração sem isolamento de base de dados
 
-Os vários pods e serviços podem ser declarados em ficheiros YAML.
+Os vários *pods* e serviços podem ser declarados em ficheiros [YAML](https://en.wikipedia.org/wiki/YAML).
 
-Ver [kubernetes/deployment.yml](kubernetes/deployment.yml) para a declaração do objeto `Deployment`, com a definição do pod com a aplicação.
+Ver [kubernetes/deployment.yml](kubernetes/deployment.yml) para a declaração do objeto `Deployment`, com a definição do *pod* com a aplicação.
 
 Para executar:
 
@@ -185,21 +207,27 @@ Para criar a arquitetura:
     kubectl apply -f deployment.yml
     kubectl apply -f load-balancer.yml
 
-O cluster fica com as réplicas da aplicação em execução, e o acesso é distribuído pelo serviço de load balancing.
+O *cluster* fica com as réplicas da aplicação em execução, e o acesso é distribuído pelo serviço de *load balancing*.
 
-Nota: Este cenário assume SQLite como base de dados, pelo que será necessário editar a aplicação, descomentando a linha correta de configuração do SQLAlchemy.
+Nota: Este cenário assume SQLite como base de dados, pelo que será necessário editar a aplicação, removendo o comentário da linha correta de configuração do SQLAlchemy.
 
-É possível inspecionar o estado do cluster:
+É possível inspecionar o estado do *cluster*:
 
     kubectl get all
 
+O output permite identificar inequivocamente cada objeto registado.
+
+É também possível ficar a observar alterações de estado num determinado tipo de objeto:
+
+    kubectl get pod -w
+
 ### Gestão de pods
 
-É possível entrar num pod recorrendo ao seu identificador (disponível com `kubectl get all`):
+É possível entrar num *pod* recorrendo ao seu identificador (disponível com `kubectl get all`):
 
     kubectl exec -it pod/<nome-do-pod> -- bash
 
-É possível observar o *standard output* de um pod:
+É possível observar o *standard output* de um *pod*:
 
     kubectl logs -f pod/<nome-do-pod>
 
@@ -209,23 +237,23 @@ Nota: Este cenário assume SQLite como base de dados, pelo que será necessário
 
 Pretende-se que a base de dados seja PostgreSQL, num pod independente da aplicação, já que representa um componente do sistema que deve manter estado (ao contrário da API REST disponibilizada pelos pods com a aplicação).
 
-Vai ser necessário definir um `PersistentVolumeClaim` de forma a assegurar a persistência da informação, e o pod será definido por um objeto `StatefulSet`, semelhante ao `Deployment`, mas focado na persistência de estado.
+Vai ser necessário definir um `PersistentVolumeClaim` de forma a assegurar a persistência da informação, e o *pod* será definido por um objeto `StatefulSet`, semelhante ao `Deployment`, mas focado na persistência de estado.
 
 Ver [kubernetes/persistent-volume-claim.yml](kubernetes/persistent-volume-claim.yml) para o `PersistentVolumeClaim`, e [kubernetes/statefulset.yml](kubernetes/statefulset.yml) para o `StatefulSet`.
 
-O `PersistentVolumeClaim` necessita de uma correspondência num `PersistentVolume` com, no mínimo, o mesmo espaço disponível. Esse `PersistentVolume` deve ser registado pelo administrador do cluster, e o sistema fará a correspondência entre *claims* e recursos disponíveis.
+O `PersistentVolumeClaim` necessita de uma correspondência num `PersistentVolume` com, no mínimo, o mesmo espaço disponível. Esse `PersistentVolume` deve ser registado pelo administrador do *cluster*, e o sistema fará a correspondência entre *claims* e recursos disponíveis.
 
 Ver [kubernetes/persistent-volume.yml](kubernetes/persistent-volume.yml) para a definição do `PersistentVolume`.
 
-O objeto StatefulSet define o pod com a base de dados, mas não expõe o pod ao cluster da forma mais conveniente.
+O objeto `StatefulSet` define o *pod* com a base de dados, mas não expõe o pod ao *cluster* da forma mais conveniente.
 
-Por um lado, a porta utilizada pelo PostgreSQL (5432) deve ficar acessível aos restantes pods, e por outro, o *hostname* atribuído ao pod é o resultado de uma composição entre o nome determinístico do pod, do serviço, do namespace, e do cluster.
+Por um lado, a porta utilizada pelo PostgreSQL (`5432`) deve ficar acessível aos restantes pods, e por outro, o *hostname* atribuído ao *pod* é o resultado de uma composição entre o nome determinístico do *pod*, do serviço, do *namespace*, e do cluster.
 
-Por exemplo, um pod com nome `app-db-st` tem nome fixo determinado pelo `StatefulSet` de `app-db-st-0`. Se o serviço tiver nome `app-db-svc`, e o namespace for o `default`, o *hostname* gerado será `app-db-st-0.app-db-svc.default.svc.cluster.local`. É este nome que será resolvido por DNS para o endereço ip do pod.
+Por exemplo, um *pod* com nome `app-db-st` tem nome fixo determinado pelo `StatefulSet` de `app-db-st-0`. Se o serviço tiver nome `app-db-svc`, e o namespace for o `default`, o *hostname* gerado será `app-db-st-0.app-db-svc.default.svc.cluster.local`. É este nome que será resolvido por DNS para o endereço ip do *pod*.
 
 Para encurtar o nome (e.e., `db`) é necessário definir um *alias* através da declaração de um serviço (que serve apenas para esse propósito).
 
-Ver [kubernetes/statefulset-service.yml](kubernetes/statefulset-service.yml) para a definição de dois serviços que configuram a exposição do pod com a base de dados.
+Ver [kubernetes/statefulset-service.yml](kubernetes/statefulset-service.yml) para a definição de dois serviços que configuram a exposição do *pod* com a base de dados.
 
 Para inicializar a aplicação é necessário construir a imagem e registar os vários objetos no cluster:
 
@@ -245,6 +273,6 @@ Podem também ser removidos com uma abordagem semelhante:
 
     kubectl delete -f kubernetes/
 
-Para remover pods e serviços do cluster (sem indicação de ficheiros de configuração):
+Para remover pods e serviços do *cluster* (sem indicação de ficheiros de configuração):
 
     kubectl delete all --all
