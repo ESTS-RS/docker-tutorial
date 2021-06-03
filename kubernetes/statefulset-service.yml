@@ -1,0 +1,20 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: app-db-svc
+  labels:
+    app: app-db-statefulset
+spec:
+  ports:
+  - port: 5432
+    protocol: TCP
+  selector:
+    app: app-db-statefulset
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: "db"
+spec:
+  type: ExternalName
+  externalName: "app-db-st-0.app-db-svc.default.svc.cluster.local"

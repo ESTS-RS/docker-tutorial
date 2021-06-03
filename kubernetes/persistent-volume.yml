@@ -11,4 +11,5 @@ spec:
   accessModes:
     - ReadWriteOnce
   hostPath:
-    path: "/home/amgs/dev/ests/rs/docker-tutorial/app-pv"
+    type: Directory
+    path: /var/local/app-pv

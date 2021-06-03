@@ -1,0 +1,41 @@
+@startuml architecture
+!define LIGHTBLUE
+!includeurl https://gist.githubusercontent.com/amgs/de57560012a8a5f0e4240f392b678a40/raw/c903c6b4f16b60b5eef3248f093497faae378f51/style.puml
+
+' Kubernetes
+!define KubernetesPuml https://raw.githubusercontent.com/dcasati/kubernetes-PlantUML/master/dist
+
+' global definition
+!includeurl KubernetesPuml/kubernetes_Common.puml
+!includeurl KubernetesPuml/kubernetes_Context.puml
+!includeurl KubernetesPuml/kubernetes_Simplified.puml
+
+' k8s specific components
+!includeurl KubernetesPuml/OSS/KubernetesPod.puml
+!includeurl KubernetesPuml/OSS/KubernetesIng.puml
+!includeurl KubernetesPuml/OSS/KubernetesSvc.puml
+!includeurl KubernetesPuml/OSS/KubernetesPv.puml
+!includeurl KubernetesPuml/OSS/KubernetesPvc.puml
+!includeurl KubernetesPuml/OSS/KubernetesSts.puml
+
+left to right direction
+actor "User" as user
+KubernetesIng(lb, "load balancer", "")
+KubernetesPod(pod0, "app-pod-0", "")
+KubernetesPod(pod1, "app-pod-1", "")
+KubernetesPod(pod2, "app-pod-2", "")
+KubernetesPod(poddb, "db", "")
+KubernetesSts(sts, "StatefulSet", "")
+KubernetesPv(pvc, "PersistentVolumeClaim", "")
+KubernetesPv(pv, "PersistentVolume", "")
+Rel(lb, pod0, " ")
+Rel(lb, pod1, " ")
+Rel(lb, pod2, " ")
+Rel(pod0, poddb, " ")
+Rel(pod1, poddb, " ")
+Rel(pod2, poddb, " ")
+Rel_U(pv, pvc, " ")
+Rel_U(pvc, sts, " ")
+Rel_U(sts, poddb, " ")
+Rel(user, lb, "REST API")
+@enduml
