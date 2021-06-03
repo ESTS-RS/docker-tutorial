@@ -1,4 +1,4 @@
-
+# Tutorial Docker & Kubernetes <!-- omit in toc -->
 - [Aplicação exemplo](#aplicação-exemplo)
   - [Lista de tarefas](#lista-de-tarefas)
     - [Ambiente](#ambiente)
@@ -16,9 +16,9 @@
     - [Gestão de pods](#gestão-de-pods)
   - [Isolamento da base de dados](#isolamento-da-base-de-dados)
 
-# Aplicação exemplo
+## Aplicação exemplo
 
-## Lista de tarefas
+### Lista de tarefas
 
 A aplicação exemplo implementa uma lista de tarefas em Python 3, recorrendo à *framework* Flask, e ao ORM [SQLAlchemy](https://www.sqlalchemy.org/).
 
@@ -34,7 +34,7 @@ Os *endpoints* são os seguintes:
 
 O código fonte está disponível em [src/app.py](src/app.py).
 
-### Ambiente
+#### Ambiente
 
 ```bash
 $ pip freeze
@@ -49,9 +49,9 @@ SQLAlchemy==1.4.15
 Werkzeug==2.0.1
 ```
 
-# Docker
+## Docker
 
-## Com SQLite
+### Com SQLite
 
 A aplicação executa num *container* com python.
 
@@ -71,7 +71,7 @@ Após iniciar uma sessão interativa no *container*, falta instalar dependência
 
 A aplicação está disponível em `localhost:5000`
 
-## Com PostgreSQL
+### Com PostgreSQL
 
 Pretende-se agora alterar a base de dados para [PostgreSQL](https://www.postgresql.org/). O *container* será construído com as dependências necessárias, tal como descrito no [Dockerfile](Dockerfile).
 
@@ -115,9 +115,9 @@ Por último, inicia-se a aplicação, que voltará a estar disponível em `local
 
     docker run --rm --network net -v $(pwd)/src:/app -p 5000:5000 --name app app
 
-# Docker compose
+## Docker compose
 
-## Declaração do ambiente
+### Declaração do ambiente
 
 O ambiente de execução da aplicação, i.e., os dois *containers*, pode ser declarado num ficheiro de configuração (no formato `YAML`), simplificando a execução.
 
@@ -127,7 +127,7 @@ O container `db` é criado com um volume que persiste os ficheiros que suportam 
 
 Ver [docker-compose.yml](docker-compose.yml) para a descrição completa do ambiente.
 
-## Execução de ambiente
+### Execução de ambiente
 
 Para executar o ambiente declarado:
 
@@ -141,7 +141,7 @@ Para desligar todos os *containers* declarados no ambiente:
 
     docker-compose down
 
-# Cluster Kubernetes
+## Cluster Kubernetes
 
 A arquitetura da aplicação fica definida num nó de um *cluster* [Kubernetes](https://kubernetes.io/).
 
@@ -151,9 +151,9 @@ Um cluster é uma coleção de nós. Cada nó tem um conjunto de *pods*, serviç
 
 Um *pod* é uma abstração de computação que representa uma coleção de *containers*. O pod assegura apenas que os vários containers partilham o *localhost*, e que estão isolados por *default* do resto do *cluster*. As relações entre pods têm que ser definidas por outros objetos (e.g., serviços).
 
-## Execução explícita
+### Execução explícita
 
-### *Pods*
+#### *Pods*
 
 É possível iniciar *pods* com base em imagens, de forma semelhante à execução de um *container*.
 
@@ -169,7 +169,7 @@ Para inspecionar a configuração do *pod*:
 
 Na descrição estão disponíveis vários indicadores sobre o estado do *pod*.
 
-### *Load balancer*
+#### *Load balancer*
 
 Um `LoadBalancer` é um serviço no *cluster* que permite, entre outros aspetos, aceder um endereço ip interno do *cluster* (i.e., um pod) a partir do exterior.
 
@@ -186,7 +186,7 @@ O serviço não oferece acesso ao exterior ao *pod*. É necessário editar a sua
 
 O seletor corresponde a um identificador válido do *pod* que *load balancer* vai controlar. Esse identificador pode ser obtida na descrição do *pod*.
 
-## Declaração sem isolamento de base de dados
+### Declaração sem isolamento de base de dados
 
 Os vários *pods* e serviços podem ser declarados em ficheiros [YAML](https://en.wikipedia.org/wiki/YAML).
 
@@ -221,7 +221,7 @@ O output permite identificar inequivocamente cada objeto registado.
 
     kubectl get pod -w
 
-### Gestão de pods
+#### Gestão de pods
 
 É possível entrar num *pod* recorrendo ao seu identificador (disponível com `kubectl get all`):
 
@@ -233,7 +233,7 @@ O output permite identificar inequivocamente cada objeto registado.
 
 - `-f` Mantém a captura ativa.
 
-## Isolamento da base de dados
+### Isolamento da base de dados
 
 Pretende-se que a base de dados seja PostgreSQL, num pod independente da aplicação, já que representa um componente do sistema que deve manter estado (ao contrário da API REST disponibilizada pelos pods com a aplicação).
 
