@@ -15,6 +15,7 @@
   - [Declaração sem isolamento de base de dados](#declaração-sem-isolamento-de-base-de-dados)
     - [Gestão de pods](#gestão-de-pods)
   - [Isolamento da base de dados](#isolamento-da-base-de-dados)
+- [Volumes em Windows e MacOS](#volumes-em-windows-e-macos)
 
 ## Aplicação exemplo
 
@@ -276,3 +277,33 @@ Podem também ser removidos com uma abordagem semelhante:
 Para remover pods e serviços do *cluster* (sem indicação de ficheiros de configuração):
 
     kubectl delete all --all
+
+## Volumes em Windows e MacOS
+
+Kubernetes executa numa máquina virtual em Windows e MacOS. Atualmente (2021/06), a partilha de diretórios entre sistemas de ficheiros host e guest através de `hostPath` não está suportada.
+
+Para persistir a informação no sistema de ficheiros *host*, propõe-se uma alternativa [*não oficial*](https://github.com/docker/for-win/issues/5325#issuecomment-567594291).
+
+É necessário definir o tipo do `PersistentVolume` como `local`, e indicar um caminho com início em `/run/desktop/mnt/host/wsl/`.
+
+Este caminho é a raiz do sistema de ficheiros do nó. No sistema de ficheiros *host*, resolve para `/mnt/wsl/`. Por exemplo, um diretório `/mnt/wsl/data` no *host* deve ser indicado como `/run/desktop/mnt/host/wsl/data` na configuração do `PersistentVolume`.
+
+Continuando o exemplo, é agora necessário criar um diretório `data` em `/mnt/wsl`.
+
+    mkdir /mnt/wsl/data
+
+Se aplicarmos as configurações no *cluster* já será possível ver os ficheiros do *pod* em `/mnt/wsl/data`. Se o *pod* for desligado, os ficheiros permanecem na pasta, tal como acontece com volumes docker.
+
+No entanto, o conteúdo de `/mnt/wsl` não persiste entre re-inícios do *host*, i.e., se a máquina desligar, o diretório é eliminado.
+
+Para assegurar a persistência, propõe-se criar um *bind* entre `/mnt/wsl/data` e outro diretório no sistema (fora de `/mnt/wsl`). Por exemplo, cria-se um diretório em  `/var/data`.
+
+    mkdir /var/data
+
+Com o diretório criado, cria-se o *bind*.
+
+    sudo mount --bind /var/data /mnt/wsl/data
+
+O conteúdo de */var/data* é efetivamente persistente.
+
+Este *bind* deve acontecer antes de iniciar o docker.
