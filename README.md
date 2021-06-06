@@ -304,6 +304,6 @@ Com o diretório criado, cria-se o *bind*.
 
     sudo mount --bind /var/data /mnt/wsl/data
 
-O conteúdo de */var/data* é efetivamente persistente.
+O conteúdo de `/var/data` é efetivamente persistente.
 
 Este *bind* deve acontecer antes de iniciar o docker.
